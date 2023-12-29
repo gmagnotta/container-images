@@ -1,0 +1,55 @@
+infinispan:
+  authorization:
+    enabled: true
+    roleMapper: cluster
+  clusterName: infinispan
+  zeroCapacityNode: false
+  locks:
+    owners: -1
+    reliability: consistent
+endpoints:
+  dedicatedAdmin: false
+  auth: true
+  clientCert: none # none | validate | authenticate
+  hotrod:
+    enabled: true
+    qop: auth
+    serverName: infinispan
+  memcached:
+    enabled: false
+  rest:
+    enabled: true
+jgroups:
+  diagnostics: false
+  encrypt: false
+  transport: tcp
+  bindPort: 7800
+  dnsPing:
+    query: "datagrid-nodes.dg.svc.cluster.local"
+    address: "172.30.0.10"
+    recordType: A
+  relay:
+    bindPort: 7900
+keystore:
+  alias: server
+  selfSignCert: false
+  type: pkcs12
+xsite:
+  masterCandidate: true
+  maxSiteMasters: 1
+  transport: tcp
+
+logging:
+  console:
+    level: trace
+    pattern: '%d{HH:mm:ss,SSS} %-5p (%t) [%c] %m%throwable%n'
+  file:
+    level: trace
+    path: '${sys:infinispan.server.log.path}/server.log'
+    pattern: '%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p (%t) [%c] %m%throwable%n'
+  categories:
+    com.arjuna: warn
+    org.infinispan: info
+    org.jgroups: warn
+    # No need to warn about not being able to TLS/SSL handshake
+    io.netty.handler.ssl.ApplicationProtocolNegotiationHandler: error
