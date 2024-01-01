@@ -1,0 +1,18 @@
+#!/bin/bash
+# Step 1: download zulu jdk11
+BUILDER=$(buildah from registry.access.redhat.com/ubi8/ubi)
+
+buildah run $BUILDER -- curl https://cdn.azul.com/zulu-embedded/bin/zulu11.60.19-ca-jdk11.0.17-linux_aarch32hf.tar.gz -o /tmp/zulu11.60.19-ca-jdk11.0.17-linux_aarch32hf.tar.gz
+buildah run $BUILDER -- tar xzvf /tmp/zulu11.60.19-ca-jdk11.0.17-linux_aarch32hf.tar.gz -C /tmp/
+
+
+# Step 2: create runtime image
+RUNTIME=$(buildah from --arch arm --variant v7 docker.io/debian:stable)
+
+buildah copy --from $BUILDER $RUNTIME /tmp/zulu11.60.19-ca-jdk11.0.17-linux_aarch32hf /opt/java
+
+buildah config -e PATH='${PATH}:/opt/java/bin' $RUNTIME
+
+buildah commit $RUNTIME armv7azul
+buildah rm $RUNTIME
+buildah rm $BUILDER

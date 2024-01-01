@@ -1,0 +1,6 @@
+#!/bin/bash -e
+
+echo "Compiling application"
+cd /tmp/src/
+
+make

@@ -1,0 +1,25 @@
+#!/bin/bash
+set -e
+
+# Step 1: download tomcat
+BUILDER=$(buildah from registry.access.redhat.com/ubi8/ubi)
+
+buildah run $BUILDER -- curl https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.68/bin/apache-tomcat-9.0.68.tar.gz -o /tmp/apache-tomcat-9.0.68.tar.gz
+buildah run $BUILDER -- tar xzvf /tmp/apache-tomcat-9.0.68.tar.gz -C /tmp/
+buildah run $BUILDER -- rm -rf /tmp/apache-tomcat-9.0.68/webapps
+buildah run $BUILDER -- mkdir /tmp/apache-tomcat-9.0.68/webapps
+
+
+
+# Step 2: create runtime image
+RUNTIME=$(buildah from localhost/armv6azul)
+
+buildah copy --from $BUILDER $RUNTIME /tmp/apache-tomcat-9.0.68 /opt/tomcat
+
+buildah config -e JAVA_HOME='/opt/java/' $RUNTIME
+buildah config --entrypoint '["/opt/tomcat/bin/catalina.sh"]' $RUNTIME
+buildah config --cmd 'run' $RUNTIME
+
+buildah commit $RUNTIME armv6tomcat
+buildah rm $RUNTIME
+buildah rm $BUILDER

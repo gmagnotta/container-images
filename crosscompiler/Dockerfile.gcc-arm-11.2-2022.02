@@ -1,0 +1,31 @@
+# Step 1: build a temporary image that will download official Arm GNU Toolchain from https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/downloads
+FROM registry.access.redhat.com/ubi8/ubi as temporary
+
+USER root
+WORKDIR /tmp
+
+RUN yum install -y xz.x86_64 && \
+    curl https://armkeil.blob.core.windows.net/developer/Files/downloads/gnu/11.2-2022.02/binrel/gcc-arm-11.2-2022.02-x86_64-arm-none-linux-gnueabihf.tar.xz -o /tmp/gcc-arm-11.2-2022.02-x86_64-arm-none-linux-gnueabihf.tar.xz  && \
+    xzcat /tmp/gcc-arm-11.2-2022.02-x86_64-arm-none-linux-gnueabihf.tar.xz | tar xvf -
+
+# Step 2: create the final cross-compile image
+FROM registry.access.redhat.com/ubi8/ubi
+
+LABEL io.openshift.s2i.scripts-url="image:///s2i" \
+      io.s2i.scripts-url="image:///s2i"
+
+USER root
+
+COPY --from=temporary /tmp/gcc-arm-11.2-2022.02-x86_64-arm-none-linux-gnueabihf/ /opt/
+
+COPY ./s2i/ /s2i/
+COPY Makefile /tmp/src/
+COPY main.c /tmp/src/
+
+RUN yum install -y make && \
+    yum clean all && \
+    rm -rf /var/cache/yum && \
+    rm -rf /var/log/* && \
+    for i in /opt/bin/*; do C=`echo $i | cut -c 35-`; ln -s $i /usr/local/bin/$C; done
+
+ENTRYPOINT ["/s2i/assemble"]
