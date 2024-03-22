@@ -1,0 +1,24 @@
+#!/bin/bash
+set -eu -o pipefail
+
+# Custom Openjdk image for raspi 1b based on debian-slim and azul openjdk 11
+
+# Step 1: download zulu openjdk
+BUILDER=$(buildah from registry.access.redhat.com/ubi8/ubi)
+
+buildah add $BUILDER https://cdn.azul.com/zulu-embedded/bin/zulu11.70.15-ca-hl-jdk11.0.22-linux_aarch32sf.tar.gz /tmp/
+buildah run $BUILDER -- tar xzvf /tmp/zulu11.70.15-ca-hl-jdk11.0.22-linux_aarch32sf.tar.gz -C /tmp/
+
+
+# Step 2: create runtime image
+RUNTIME=$(buildah from --arch arm --variant v5 docker.io/debian:stable-slim)
+
+buildah copy --from $BUILDER $RUNTIME /tmp/zulu11.70.15-ca-hl-jdk11.0.22-linux_aarch32sf /opt/java
+
+buildah config -e PATH='${PATH}:/opt/java/bin' $RUNTIME
+buildah config --entrypoint '["/opt/java/bin/java"]' $RUNTIME
+buildah config --cmd '--version' $RUNTIME
+
+buildah commit $RUNTIME openjdk:raspi1b
+buildah rm $RUNTIME
+buildah rm $BUILDER
