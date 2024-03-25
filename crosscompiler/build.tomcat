@@ -4,22 +4,23 @@ set -eu -o pipefail
 # Step 1: download tomcat
 BUILDER=$(buildah from registry.access.redhat.com/ubi8/ubi)
 
-buildah add $BUILDER https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.87/bin/apache-tomcat-9.0.87.tar.gz /tmp/
-buildah run $BUILDER -- tar xzvf /tmp/apache-tomcat-9.0.87.tar.gz -C /tmp/
-buildah run $BUILDER -- rm -rf /tmp/apache-tomcat-9.0.87/webapps
-buildah run $BUILDER -- mkdir /tmp/apache-tomcat-9.0.87/webapps
+buildah add $BUILDER https://dlcdn.apache.org/tomcat/tomcat-10/v10.1.19/bin/apache-tomcat-10.1.19.tar.gz /tmp/
+buildah run $BUILDER -- tar xzvf /tmp/apache-tomcat-10.1.19.tar.gz -C /tmp/
+buildah run $BUILDER -- rm -rf /tmp/apache-tomcat-10.1.19/webapps
+buildah run $BUILDER -- mkdir /tmp/apache-tomcat-10.1.19/webapps
 
 
 
 # Step 2: create runtime image
 RUNTIME=$(buildah from localhost/openjdk:raspi1b)
 
-buildah copy --from $BUILDER $RUNTIME /tmp/apache-tomcat-9.0.87 /opt/tomcat
+buildah copy --from $BUILDER $RUNTIME /tmp/apache-tomcat-10.1.19 /opt/tomcat
 
 buildah config -e JAVA_HOME='/opt/java/' $RUNTIME
 buildah config --entrypoint '["/opt/tomcat/bin/catalina.sh"]' $RUNTIME
 buildah config --cmd 'run' $RUNTIME
+buildah config --user root $RUNTIME
 
-buildah commit $RUNTIME tomcat9:raspi1b
+buildah commit $RUNTIME tomcat10:raspi1b
 buildah rm $RUNTIME
 buildah rm $BUILDER
