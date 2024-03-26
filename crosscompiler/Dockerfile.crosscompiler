@@ -5,13 +5,16 @@ FROM debian:stable-slim as builder
 WORKDIR /tmp
 
 LABEL io.openshift.s2i.scripts-url="image:///s2i" \
-      io.s2i.scripts-url="image:///s2i"
+      io.s2i.scripts-url="image:///s2i" \
+      io.openshift.s2i.destination="/tmp"
 
 COPY ./s2i/ /s2i/
 
 RUN apt-get update && \
-    apt-get install -y libc6-armel-cross libc6-dev-armel-cross binutils-arm-linux-gnueabi libncurses5-dev build-essential bison flex libssl-dev bc \
+    apt-get install -y \
+    make libc6-armel-cross libc6-dev-armel-cross binutils-arm-linux-gnueabi libncurses5-dev build-essential bison flex libssl-dev bc \
     gcc-arm-linux-gnueabi g++-arm-linux-gnueabi && \
-    apt-get clean
+    apt-get clean && \
+    ln -s -f /usr/bin/arm-linux-gnueabi-gcc-12 /usr/bin/gcc-12
 
 ENTRYPOINT ["/s2i/assemble"]
