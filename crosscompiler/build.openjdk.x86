@@ -1,19 +1,14 @@
 #!/bin/bash
-# Step 1: download zulu jdk11
+set -eu -o pipefail
+
 BUILDER=$(buildah from registry.access.redhat.com/ubi8/ubi)
 
-buildah run $BUILDER -- curl -L https://cdn.azul.com/zulu/bin/zulu11.60.19-ca-jdk11.0.17-linux_x64.tar.gz -o /tmp/zulu11.60.19-ca-jdk11.0.17-linux_x64.tar.gz
-buildah run $BUILDER -- tar xzvf /tmp/zulu11.60.19-ca-jdk11.0.17-linux_x64.tar.gz -C /tmp/
+buildah run $BUILDER -- sh -c 'adduser -U java && \
+dnf update -y && \
+dnf install -y java-11-openjdk-headless.x86_64 java-11-openjdk-jmods.x86_64 && \
+dnf clean all && \
+rm -rf /var/cache/yum'
 
+buildah config --user java $BUILDER
 
-# Step 2: create runtime image
-RUNTIME=$(buildah from docker.io/debian:stable)
-
-buildah copy --from $BUILDER $RUNTIME /tmp/zulu11.60.19-ca-jdk11.0.17-linux_x64 /opt/java
-
-buildah config -e JAVA_HOME='/opt/java/' $RUNTIME
-buildah config -e PATH='${PATH}:/opt/java/bin' $RUNTIME
-
-buildah commit $RUNTIME x64azul
-buildah rm $RUNTIME
-buildah rm $BUILDER
+buildah commit $BUILDER x64ubi
