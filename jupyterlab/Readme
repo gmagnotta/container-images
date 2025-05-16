@@ -1,0 +1,7 @@
+#
+# Container to run jupyterlab locally based on Red Hat UBI
+
+Build image: `podman build -t  my-jupyter-image -f Dockerfile.ubi .`
+
+
+See start.sh on how to run
